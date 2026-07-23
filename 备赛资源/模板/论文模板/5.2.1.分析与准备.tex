@@ -1,0 +1,64 @@
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{具体分析}
+
+问题二要求从时间、地理、产品、客户和物流五个维度量化分析各因素与销售额的关联程度与影响显著性，属于多因素关联分析问题。本问采用单因素方差分析（ANOVA）与Spearman秩相关分析相结合的方法进行求解。
+
+首先对预处理后的数据进行维度特征提取，包括分类维度（区域、产品大类、产品子类别、客户细分、发货模式、年份、季度）和数值维度（月度销售额、月度订单数、月度客户数等），接着运用ANOVA方法对分类变量与连续销售额进行关联性检验，计算F统计量、显著性p值和$\eta^2$效应量以衡量各因素的方差解释能力，然后计算月度聚合数值特征间的Spearman秩相关系数矩阵以揭示数值指标之间的关联强度，最后综合ANOVA效应量和Spearman相关系数对影响因素进行排序和解读。分析过程中同时采用Levene检验验证方差齐性假设，对不满足的维度辅以Kruskal-Wallis非参数检验。具体分析流程如图\ref{fig:analysis2_flow}所示。
+
+\begin{figure}[H]
+  \begin{center}
+    \begin{tikzpicture}[x=1cm, y=0.7cm]
+      \node[box] (n11) at (0, 0) {数据特征提取};
+      \node[box] (n12) at (5, 0) {方差齐性检验};
+      \node[box] (n13) at (10, 0) {单因素ANOVA};
+      \node[box] (n22) at (5, -3) {Spearman相关};
+      \node[box] (n21) at (0, -3) {效应量计算};
+      \node[box] (n23) at (10, -3) {相关性热力图};
+      \node[box] (n31) at (0, -6) {多维度箱线图};
+      \node[box] (n32) at (5, -6) {影响因素排序};
+      \node[box] (n33) at (10, -6) {结果综合解读};
+      \draw[arrow] (n11) -- (n12);
+      \draw[arrow] (n12) -- (n13);
+      \draw[arrow] (n23) -- (n22);
+      \draw[arrow] (n22) -- (n21);
+      \draw[arrow] (n13) -- ++(0,-1.0) -| (n23);
+      \draw[arrow] (n21) -- (n31);
+      \draw[arrow] (n31) -- (n32);
+      \draw[arrow] (n32) -- (n33);
+    \end{tikzpicture}
+    \caption{问题二分析流程图}
+    \label{fig:analysis2_flow}
+  \end{center}
+\end{figure}
+
+% ============================================================
+\subsubsection{模型准备}
+
+在进行影响因素相关性分析之前，需要明确各维度的变量类型和适用的关联度量方法。本问涉及的核心挑战在于：数据集中的维度变量多为分类变量（如Region、Category等），而目标变量Sales为连续变量，无法直接使用Pearson相关系数衡量关联性，需采用适合分类-连续变量关联分析的方法。
+
+该问题本质上是一个多因素影响力评估问题，需要在混合数据类型条件下科学量化各因素对销售额的解释能力。常用的分类-连续关联分析方法包括单因素方差分析（ANOVA）、Kruskal-Wallis非参数检验和$\eta^2$效应量。本节从适用条件、统计功效、结果可解释性三方面进行评估，如表\ref{tab:算法对比2}所示。
+
+\begin{longtable}{>{\centering\arraybackslash}p{0.18\textwidth}>{\centering\arraybackslash}p{0.26\textwidth}>{\centering\arraybackslash}p{0.18\textwidth}>{\centering\arraybackslash}p{0.26\textwidth}}
+  \caption{关联分析方法对比}
+  \label{tab:算法对比2} \\
+  \toprule
+  方法 & 适用条件 & 统计功效 & 结果可解释性 \\
+  \midrule
+  \endfirsthead
+  \caption{关联分析方法对比（续）} \\
+  \toprule
+  方法 & 适用条件 & 统计功效 & 结果可解释性 \\
+  \midrule
+  \endhead
+  \bottomrule
+  \endfoot
+  单因素ANOVA & 正态性+方差齐性 & 优 & 优（F值+$\eta^2$直观） \\
+  Kruskal-Wallis & 无分布假设 & 良 & 良（H统计量） \\
+  点双列相关 & 二分类变量 & 中 & 中 \\
+\end{longtable}
+
+通过对比可以看出，ANOVA方法在满足基本假设的前提下统计功效最优，且$\eta^2$效应量具有直观的方差解释含义（"该因素解释了销售额变异的百分比"），利于业务解读。对于方差齐性不满足的情况，辅以Welch修正或Kruskal-Wallis非参数检验。对于数值变量之间的关联分析，因销售额呈现右偏分布，采用Spearman秩相关系数代替Pearson相关系数以增强稳健性。
+
+综上所述，本节完成了分析方法的选型，确定了以ANOVA+$\eta^2$效应量为主、Spearman秩相关为辅的多维度关联分析策略，接下来将建立关联分析模型并进行实际求解。

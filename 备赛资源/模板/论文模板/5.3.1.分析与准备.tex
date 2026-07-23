@@ -1,0 +1,65 @@
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{具体分析}
+
+问题三要求结合数据特征与业务逻辑，选择合适的建模方法构建零售销售额预测模型，并按时间维度划分训练集和测试集进行模型评估，属于时间序列预测问题。本问采用Holt-Winters指数平滑为主、随机森林和XGBoost回归为补充的方法进行综合建模与评估。
+
+首先对订单明细数据按月进行聚合，将9800条日级记录转化为48个月的月度销售额时间序列，接着通过特征工程构建时间特征（月份、季度虚拟变量）、滞后特征（lag1/lag3/lag6/lag12）和滚动窗口统计特征（3/6/12个月滚动均值与标准差），然后按照2022-2024年为训练集（24个月，去除因滞后特征产生的NaN）、2025年为测试集（12个月）的划分方式，对比季节性朴素预测（Naive Seasonal）、Holt-Winters指数平滑、随机森林回归和XGBoost回归四种模型的预测性能，最后通过均方误差（MSE）、平均绝对误差（MAE）、平均绝对百分比误差（MAPE）和决定系数（$R^2$）全面评估预测效果。具体分析流程如图\ref{fig:analysis3_flow}所示。
+
+\begin{figure}[H]
+  \begin{center}
+    \begin{tikzpicture}[x=1cm, y=0.7cm]
+      \node[box] (n11) at (0, 0) {数据按月聚合};
+      \node[box] (n12) at (5, 0) {时间特征构建};
+      \node[box] (n13) at (10, 0) {滞后特征提取};
+      \node[box] (n22) at (5, -3) {模型候选训练};
+      \node[box] (n21) at (0, -3) {滚动统计特征};
+      \node[box] (n23) at (10, -3) {训练测试划分};
+      \node[box] (n31) at (0, -6) {多指标评估};
+      \node[box] (n32) at (5, -6) {最优模型选择};
+      \node[box] (n33) at (10, -6) {残差分布分析};
+      \draw[arrow] (n11) -- (n12);
+      \draw[arrow] (n12) -- (n13);
+      \draw[arrow] (n23) -- (n22);
+      \draw[arrow] (n22) -- (n21);
+      \draw[arrow] (n13) -- ++(0,-1.0) -| (n23);
+      \draw[arrow] (n21) -- (n31);
+      \draw[arrow] (n31) -- (n32);
+      \draw[arrow] (n32) -- (n33);
+    \end{tikzpicture}
+    \caption{问题三分析流程图}
+    \label{fig:analysis3_flow}
+  \end{center}
+\end{figure}
+
+% ============================================================
+\subsubsection{模型准备}
+
+零售销售额预测需要在预测精度和模型可解释性之间取得平衡。该问题本质上是一个时间序列预测问题，需要在历史销售数据中捕捉趋势性（持续增长或下降）、季节性（年度周期性波动）和随机波动三种成分，并在有限的训练样本（仅24个月有效数据）条件下进行合理外推。
+
+常用预测方法包括三大类：经典时间序列方法（Holt-Winters指数平滑、SARIMA），机器学习方法（随机森林、XGBoost），以及深度学习（LSTM）。本节从预测精度、训练效率、小样本适应性、可解释性四个维度进行评估，如表\ref{tab:算法对比3}所示。
+
+\begin{longtable}{>{\centering\arraybackslash}p{0.14\textwidth}>{\centering\arraybackslash}p{0.18\textwidth}>{\centering\arraybackslash}p{0.18\textwidth}>{\centering\arraybackslash}p{0.16\textwidth}>{\centering\arraybackslash}p{0.18\textwidth}}
+  \caption{预测方法能力对比}
+  \label{tab:算法对比3} \\
+  \toprule
+  方法 & 预测精度 & 小样本适应性 & 训练效率 & 可解释性 \\
+  \midrule
+  \endfirsthead
+  \caption{预测方法能力对比（续）} \\
+  \toprule
+  方法 & 预测精度 & 小样本适应性 & 训练效率 & 可解释性 \\
+  \midrule
+  \endhead
+  \bottomrule
+  \endfoot
+  Holt-Winters & 良 & 优 & 优 & 优 \\
+  随机森林 & 良 & 良 & 良 & 良 \\
+  XGBoost & 优（大样本） & 中 & 良 & 中 \\
+  SARIMA & 良 & 中 & 良 & 优 \\
+\end{longtable}
+
+通过对比可以看出，Holt-Winters指数平滑在小样本适应性、训练效率和可解释性方面表现最优，特别适合只有48个月数据（训练集仅24个月有效）的场景。随机森林和XGBoost虽然在大样本场景下预测精度更优，但在训练样本有限的情况下容易过拟合，且特征工程依赖外部变量，预测效果不稳定。因此，本文以Holt-Winters为主模型，以随机森林和XGBoost为对比模型，同时加入季节性朴素预测作为基线基准。
+
+综上所述，本节完成了预测方法的选型和对比策略设计，确定了以多模型对比评估为核心的求解框架，接下来将建立各预测模型并进行求解评估。

@@ -1,0 +1,172 @@
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{模型建立}
+
+针对问题三，本节将建立Holt-Winters指数平滑模型、随机森林模型和XGBoost模型，并定义统一的评估指标体系。具体过程如下。
+
+\textbf{步骤一：Holt-Winters指数平滑模型}
+
+Holt-Winters模型将时间序列分解为水平、趋势和季节三个成分，适用于具有趋势性和季节性的月度销售数据。设时间序列为$\{S_t\}_{t=1}^{T}$，季节周期长度为$L=12$（月度数据），加法模型形式为：
+
+水平方程：
+
+\begin{equation}
+\ell_t = \alpha (S_t - b_{t-L}) + (1-\alpha)(\ell_{t-1} + \beta_{t-1})
+\end{equation}
+
+趋势方程：
+
+\begin{equation}
+\beta_t = \beta (\ell_t - \ell_{t-1}) + (1-\beta)\beta_{t-1}
+\end{equation}
+
+季节方程：
+
+\begin{equation}
+b_t = \gamma (S_t - \ell_{t-1} - \beta_{t-1}) + (1-\gamma)b_{t-L}
+\end{equation}
+
+其中，$\ell_t$为第$t$期的水平成分，$\beta_t$为趋势成分，$b_t$为季节成分。平滑参数$\alpha$、$\beta$、$\gamma$均在[0, 1]范围内，通过最小化一步预测误差平方和自动估计：
+
+\begin{equation}
+(\hat{\alpha}, \hat{\beta}, \hat{\gamma}) = \arg\min_{\alpha,\beta,\gamma} \sum_{t=L+1}^{T} (S_t - \hat{S}_{t|t-1})^2
+\end{equation}
+
+向前$h$步预测公式为：
+
+\begin{equation}
+\hat{S}_{T+h|T} = \ell_T + h \cdot \beta_T + b_{T+h-L\lceil h/L \rceil}
+\end{equation}
+
+其中$\lceil \cdot \rceil$为向上取整。加法季节性模型假设季节波动的幅度不随趋势水平变化，适用于本数据集中销售额的季节性方差相对稳定的特征。
+
+\textbf{步骤二：随机森林回归模型}
+
+随机森林通过Bootstrap重采样构建多棵决策树的集成。对于每棵决策树，从训练集有放回抽样$n$个样本，并在每个分裂节点从$p$个特征中随机选取$m=\lfloor p/3 \rfloor$个候选特征。最终预测为$B$棵树的均值：
+
+\begin{equation}
+\hat{S}_{RF} = \frac{1}{B} \sum_{b=1}^{B} T_b(\mathbf{x})
+\end{equation}
+
+其中$T_b(\mathbf{x})$为第$b$棵决策树对特征向量$\mathbf{x}$的预测值，$B=500$为树的数量。特征向量包含月份虚拟变量、滞后销售额特征和滚动统计特征。
+
+\textbf{步骤三：XGBoost回归模型}
+
+XGBoost通过梯度提升框架迭代构建弱学习器。第$k$轮的预测值为：
+
+\begin{equation}
+\hat{S}^{(k)} = \hat{S}^{(k-1)} + \eta \cdot f_k(\mathbf{x})
+\end{equation}
+
+其中$\eta=0.05$为学习率，$f_k$为第$k$棵回归树。目标函数包含损失函数和正则化项：
+
+\begin{equation}
+\mathcal{L} = \sum_{i=1}^{n} l(S_i, \hat{S}_i) + \Omega(f_k)
+\end{equation}
+
+正则化项$\Omega(f_k)$为：
+
+\begin{equation}
+\Omega(f_k) = \lambda_1 T_{leaves} + \frac{1}{2}\lambda_2 \sum_{j=1}^{T_{leaves}} w_j^2
+\end{equation}
+
+其中$\lambda_1$和$\lambda_2$分别为L1和L2正则化系数，$T_{leaves}$为叶子节点数，$w_j$为叶子权重。
+
+\textbf{步骤四：模型评估指标体系}
+
+采用以下四个指标全面评估预测性能：
+
+均方误差MSE：
+
+\begin{equation}
+MSE = \frac{1}{n_{test}} \sum_{t=1}^{n_{test}} (S_t - \hat{S}_t)^2
+\end{equation}
+
+平均绝对误差MAE：
+
+\begin{equation}
+MAE = \frac{1}{n_{test}} \sum_{t=1}^{n_{test}} |S_t - \hat{S}_t|
+\end{equation}
+
+平均绝对百分比误差MAPE：
+
+\begin{equation}
+MAPE = \frac{100\%}{n_{test}} \sum_{t=1}^{n_{test}} \left|\frac{S_t - \hat{S}_t}{S_t}\right|
+\end{equation}
+
+决定系数$R^2$：
+
+\begin{equation}
+R^2 = 1 - \frac{\sum_{t=1}^{n_{test}} (S_t - \hat{S}_t)^2}{\sum_{t=1}^{n_{test}} (S_t - \bar{S}_{test})^2}
+\end{equation}
+
+其中$n_{test}=12$为测试集样本数（2025年12个月），$\bar{S}_{test}$为测试集实际销售额均值。MAPE因其百分比形式在业务场景中可解释性最强，是模型选择的首要指标。
+
+综上所述，本节完成了三种预测模型的建立和评估指标体系的定义，接下来将基于2022-2025年实际数据进行模型训练和求解评估。
+
+% ============================================================
+\subsubsection{模型求解}
+
+基于上述模型，本节利用2022-2025年48个月的销售额数据进行模型训练与测试。
+
+\textbf{（一）多模型对比评估}
+
+四种候选模型在测试集（2025年12个月）上的评估结果如表\ref{tab:模型对比}所示。
+
+\begin{longtable}{>{\centering\arraybackslash}p{0.22\textwidth}>{\centering\arraybackslash}p{0.22\textwidth}>{\centering\arraybackslash}p{0.22\textwidth}>{\centering\arraybackslash}p{0.22\textwidth}}
+  \caption{预测模型评估指标对比}
+  \label{tab:模型对比} \\
+  \toprule
+  模型 & MSE & MAE & MAPE(\%) \\
+  \midrule
+  \endfirsthead
+  \caption{预测模型评估指标对比（续）} \\
+  \toprule
+  模型 & MSE & MAE & MAPE(\%) \\
+  \midrule
+  \endhead
+  \bottomrule
+  \endfoot
+  季节朴素预测（基线） & 358424463 & 15444 & 24.86 \\
+  随机森林回归 & 380305280 & 15854 & 26.06 \\
+  XGBoost回归 & 459148704 & 17760 & 28.41 \\
+  Holt-Winters & 185519569 & 11412 & 23.56 \\
+\end{longtable}
+
+从表\ref{tab:模型对比}可以看出，Holt-Winters指数平滑模型在全部四项指标上均表现最优（MAPE为23.56\%，决定系数$R^2$达0.7215），显著优于其他三种方法。季节性朴素预测作为基线模型表现尚可（MAPE为24.86\%），说明年度季节性在销售额波动中占主导地位。随机森林和XGBoost的预测效果反而不如简单基线模型，主要原因是训练样本量过小（仅24个月有效样本），复杂模型无法充分发挥其非线性拟合优势，同时容易在有限样本上过拟合。
+
+\textbf{（二）最优模型预测效果}
+
+Holt-Winters模型在测试集上的预测值与实际值对比如图\ref{fig:预测对比}所示。模型较好地捕捉了2025年整体的上升趋势和3月、9月、11月的销售高峰，体现了加法季节性模型的适用性。
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{../求解/问题三/图片/最优模型预测对比.png}
+  \caption{最优模型（Holt-Winters）预测值与实际值对比}
+  \label{fig:预测对比}
+\end{figure}
+
+\textbf{（三）残差分析}
+
+如图\ref{fig:残差分析}所示，预测残差的分布基本围绕零均值对称，直方图接近正态分布形态，QQ图上大部分点落在理论直线附近，表明残差近似满足白噪声假设，模型已充分提取了数据中的趋势和季节信息。残差标准差约为9344美元，对应95\%的预测误差边界约为$\pm18314$美元。
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{../求解/问题三/图片/残差分析.png}
+  \caption{预测残差分布直方图与QQ图}
+  \label{fig:残差分析}
+\end{figure}
+
+\textbf{（四）特征重要性分析}
+
+对于XGBoost模型，特征重要性排序（如图\ref{fig:特征重要性}所示）表明Sales\_lag12（12个月前的销售额）是最重要的预测特征，验证了年度季节性的主导地位；Sales\_lag1（上月销售额）和Sales\_roll\_mean\_12（12个月滚动均值）紧随其后，反映了短期惯性和长期趋势对销售额预测的重要性。
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{../求解/问题三/图片/特征重要性排序.png}
+  \caption{XGBoost模型特征重要性Top 15排序}
+  \label{fig:特征重要性}
+\end{figure}
+
+综合以上分析，Holt-Winters指数平滑模型在小样本月度销售额预测场景中表现最优，其MAPE为23.56\%（即预测误差约为实际销售额的24\%），$R^2$为0.7215（解释了约72\%的销售额方差），说明模型对销售趋势和季节模式具有较好的捕捉能力。但MAPE仍有23.56\%，主要受限于训练数据时间跨度较短（仅4年）和2025年Q3-Q4销售额异常强劲增长（超预期季节性幅度），未来可通过引入更多历史数据和外部协变量进一步提升预测精度。

@@ -1,0 +1,312 @@
+﻿% ============================================
+% 山西大学第二十届数学建模竞赛论文模板（校赛版）
+%
+% 校赛要求(依据附件1)：
+%   1. 首页：论文题目 + 摘要（含模型主要特点、建模方法、主要结果）+ 关键词
+%   2. 正文：问题提出 -> 模型假设 -> 模型建立 -> 模型求解 -> 结果分析 -> 模型展望
+%   3. 参考文献(标准格式)
+%   4. 附录：计算机程序
+% 提交：PDF格式，命名"题号+姓名"，如 A_张三_李四_王五
+% 编译方式: xelatex -> xelatex (2次)
+% ============================================
+\documentclass[12pt,a4paper]{article}
+
+% ---------- 中文支持 ----------
+\usepackage{ctex}
+\usepackage{fontspec}
+\setmainfont{Times New Roman}
+
+% ---------- 数学公式 ----------
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{bm}
+
+% ---------- 页面设置 ----------
+\usepackage{geometry}
+\geometry{left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm}
+
+% ---------- 图表 ----------
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{float}
+\usepackage{subfigure}
+
+% ---------- 超链接 ----------
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=black, citecolor=black, urlcolor=blue}
+
+% ---------- 页眉页脚 ----------
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\setlength{\headheight}{14.5pt}
+\lhead{山西大学第二十届数学建模竞赛}
+\chead{}
+\rhead{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ---------- 标题设置 ----------
+\usepackage{titlesec}
+\titleformat{\section}{\Large\bfseries}{}{0em}{}
+\titleformat{\subsection}{\large\bfseries}{}{0em}{}
+\titlespacing{\section}{0pt}{12pt}{6pt}
+\titlespacing{\subsection}{0pt}{8pt}{4pt}
+
+% ---------- 段落 ----------
+\setlength{\parindent}{2em}
+\setlength{\parskip}{0.5ex}
+
+% ---------- 代码块 ----------
+\usepackage{listings}
+\usepackage{xcolor}
+\lstset{
+  language=Python,
+  basicstyle=\small\ttfamily,
+  numbers=left,
+  numberstyle=\tiny,
+  stepnumber=1,
+  numbersep=5pt,
+  backgroundcolor=\color{gray!10},
+  frame=single,
+  breaklines=true,
+  captionpos=b,
+  keywordstyle=\color{blue},
+  commentstyle=\color{green!60!black},
+  stringstyle=\color{red}
+}
+
+% ============================================
+\begin{document}
+
+% ---------- 首页：题目 + 摘要 + 关键词 ----------
+\begin{center}
+  {\LARGE\bfseries 山西大学第二十届数学建模竞赛}\\[0.8cm]
+  {\huge\bfseries 题号：A（或B）}\\[0.5cm]
+  {\LARGE\bfseries （论文题目）}\\[0.3cm]
+  \rule{\textwidth}{0.5pt}\\[0.3cm]
+\end{center}
+
+\begin{center}
+  {\large\bfseries 摘要}
+\end{center}
+
+\begin{quotation}
+\noindent
+%% ===== 摘要内容开始 =====
+%% 要求：说明模型的主要特点、建模方法和主要结果
+本文针对\underline{\hspace{4cm}}问题，综合运用\underline{\hspace{4cm}}
+等方法，建立了\underline{\hspace{4cm}}模型。
+
+针对问题一，\underline{\hspace{6cm}}。采用\underline{\hspace{3cm}}
+方法求解，得到\underline{\hspace{3cm}}。
+
+针对问题二，\underline{\hspace{6cm}}。采用\underline{\hspace{3cm}}
+方法求解，得到\underline{\hspace{3cm}}。
+
+\hspace{0pt}{\hfill（正文共\underline{\hspace{1cm}}页，附录\underline{\hspace{1cm}}页）}
+%% ===== 摘要内容结束 =====
+\end{quotation}
+
+\vspace{0.3cm}
+\noindent\textbf{关键词：} 关键词一；关键词二；关键词三；关键词四
+
+\vspace{0.5cm}
+\noindent\textbf{参赛队员：} 姓名1，姓名2，姓名3
+
+\noindent\textbf{指导教师：} 教师姓名
+
+\newpage
+
+% ---------- 正文 ----------
+\setcounter{page}{1}
+
+\section{问题重述}
+
+\subsection{问题背景}
+
+% 用自己的话描述题目背景（不要照抄题目原文）
+
+\subsection{问题要求}
+
+% 列出题目要求解决的具体问题
+
+\section{模型假设}
+
+\begin{enumerate}
+  \item \underline{\hspace{10cm}}
+  \item \underline{\hspace{10cm}}
+  \item \underline{\hspace{10cm}}
+\end{enumerate}
+
+\vspace{0.3cm}
+\noindent{\small 注：每个假设后最好加一句理由说明。}
+
+\section{符号说明}
+
+\begin{center}
+\begin{tabular}{ccc}
+  \toprule
+  \textbf{符号} & \textbf{含义} & \textbf{单位} \\
+  \midrule
+  $x_1$ & 变量一 &   \\
+  $x_2$ & 变量二 &   \\
+  $y$   & 因变量 &   \\
+  $\alpha$ & 参数一 &   \\
+  $\beta$  & 参数二 &   \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\section{模型的建立与求解}
+
+%% 每个子问题按：分析 -> 建模 -> 求解 -> 结果展示
+
+\subsection{问题一的分析与模型建立}
+
+\textbf{问题分析：}
+问题一要解决\underline{\hspace{4cm}}，其核心在于\underline{\hspace{4cm}}。
+
+\textbf{模型建立：}
+基于上述分析，我们建立了如下模型：
+
+\begin{equation}
+  \label{eq:model1}
+  \min Z = \sum_{i=1}^{n} c_i x_i
+\end{equation}
+
+\begin{align}
+  \text{s.t.} \quad & \sum_{i=1}^{n} a_{ij} x_i \leq b_j,\quad j=1,\dots,m \\
+  & x_i \geq 0,\quad i=1,\dots,n
+\end{align}
+
+其中，$c_i$表示\underline{\hspace{2cm}}，$a_{ij}$表示\underline{\hspace{2cm}}，
+$b_j$表示\underline{\hspace{2cm}}。
+
+\textbf{模型求解：}
+使用MATLAB中的\texttt{linprog}函数求解，关键代码如下：
+
+\begin{lstlisting}[caption=核心求解代码]
+f = [c1, c2, ..., cn];
+A = [a11, a12, ...; ...];
+b = [b1, b2, ..., bm];
+[x, fval] = linprog(f, A, b);
+disp(['最优解: ', num2str(x')]);
+disp(['最优值: ', num2str(fval)]);
+\end{lstlisting}
+
+\textbf{结果分析：}
+求解结果如表~\ref{tab:result1}所示。
+
+\begin{table}[H]
+\centering
+\caption{模型求解结果}
+\label{tab:result1}
+\begin{tabular}{cccc}
+  \toprule
+  参数 & 方案一 & 方案二 & 方案三 \\
+  \midrule
+  指标1 &  &  &  \\
+  指标2 &  &  &  \\
+  指标3 &  &  &  \\
+  \bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+% \includegraphics[width=0.7\textwidth]{figure1.png}
+\caption{结果可视化图}
+\label{fig:result1}
+\end{figure}
+
+\newpage
+
+\subsection{问题二的分析与模型建立}
+
+\textbf{问题分析：}
+问题二涉及\underline{\hspace{4cm}}，与问题一不同的是\underline{\hspace{4cm}}。
+
+\textbf{模型建立：}
+采用\underline{\hspace{3cm}}模型。
+
+\begin{equation}
+  \label{eq:model2}
+  Y = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \cdots + \beta_k X_k + \varepsilon
+\end{equation}
+
+\section{结果分析与检验}
+
+\subsection{灵敏度分析}
+
+将关键参数$\alpha$在$[-20\%, +20\%]$范围内变化，观察结果变化。
+
+\begin{figure}[H]
+\centering
+% \includegraphics[width=0.7\textwidth]{sensitivity.png}
+\caption{灵敏度分析结果}
+\label{fig:sensitivity}
+\end{figure}
+
+\subsection{误差分析}
+
+\begin{table}[H]
+\centering
+\caption{误差分析}
+\label{tab:error}
+\begin{tabular}{cccc}
+  \toprule
+  样本 & 实际值 & 预测值 & 相对误差 \\
+  \midrule
+  1 &  &  & \\
+  2 &  &  & \\
+  3 &  &  & \\
+  \bottomrule
+\end{tabular}
+\end{table}
+
+\section{模型评价与改进}
+
+\subsection{模型优点}
+\begin{itemize}
+  \item 模型结构清晰，易于理解和实现
+  \item \underline{\hspace{8cm}}
+\end{itemize}
+
+\subsection{模型缺点}
+\begin{itemize}
+  \item \underline{\hspace{8cm}}
+\end{itemize}
+
+\subsection{改进方向}
+\begin{itemize}
+  \item 可以考虑引入\underline{\hspace{4cm}}来改进
+\end{itemize}
+
+\section{参考文献}
+
+\begin{thebibliography}{9}
+  \bibitem{ref1} 作者. 论文题目[J]. 期刊名, 出版年份, 卷(期): 起止页码.
+  \bibitem{ref2} 作者. 书名[M]. 出版地: 出版社, 出版年份.
+\end{thebibliography}
+
+\newpage
+\appendix
+\section{附录：计算机程序}
+
+%% 附件压缩包命名为：附件+姓名（如 附件_张三_李四_王五.zip）
+%% 发送至 sxushuxuejianmo@163.com
+
+\begin{lstlisting}[caption=主程序]
+% 数学建模竞赛主程序
+clear; clc; close all;
+data = xlsread('data.xlsx');
+% 模型求解
+% 可视化
+figure;
+plot(x, y, 'b-o', 'LineWidth', 1.5);
+xlabel('X');
+ylabel('Y');
+title('结果');
+grid on;
+\end{lstlisting}
+
+\end{document}

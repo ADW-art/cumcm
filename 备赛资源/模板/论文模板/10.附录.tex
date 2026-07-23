@@ -1,0 +1,41 @@
+
+
+\makeatletter
+\let\@oldaddcontentsline\addcontentsline
+\renewcommand{\addcontentsline}[3]{}
+\section*{附录}
+
+\renewcommand{\arraystretch}{1.2}
+\begin{longtable}{>{\centering\arraybackslash}p{0.33\textwidth}>{\centering\arraybackslash}p{0.61\textwidth}}
+  \caption{附件文件说明}
+  \label{tab:附录} \\
+  \toprule
+  文件名 & 说明 \\
+  \midrule
+  \endfirsthead
+  \caption{附件文件说明（续）} \\
+  \toprule
+  文件名 & 说明 \\
+  \midrule
+  \endhead
+  \bottomrule
+  \endfoot
+  data.csv & 原始数据集（2022-2025年美国零售企业订单数据） \\
+  预处理数据.csv & 问题一预处理后的完整数据集 \\
+  问题一\_描述性统计与可视化.py & 问题一Python求解代码 \\
+  问题二\_影响因素相关性分析.py & 问题二Python求解代码 \\
+  问题三\_销售额预测模型.py & 问题三Python求解代码 \\
+  问题四\_未来预测与策略建议.py & 问题四Python求解代码 \\
+  销售额描述性统计.csv & 问题一输出：核心描述性统计量 \\
+  核心业务指标.csv & 问题一输出：核心业务指标汇总 \\
+  ANOVA分析结果.csv & 问题二输出：ANOVA分析结果表 \\
+  模型对比评估指标.csv & 问题三输出：多模型对比评估 \\
+  测试集预测结果.csv & 问题三输出：测试集实际与预测对比 \\
+  2026年月度预测.csv & 问题四输出：2026年月度预测明细 \\
+  2026年季度预测.csv & 问题四输出：2026年季度预测汇总 \\
+  分区域月度预测.csv & 问题四输出：分区域2026年月度预测 \\
+  分品类月度预测.csv & 问题四输出：分品类2026年月度预测 \\
+  图片/（各问题图片文件夹） & 论文中所有图表的PNG图片文件 \\
+\end{longtable}
+\renewcommand{\arraystretch}{1.0}
+\endinput

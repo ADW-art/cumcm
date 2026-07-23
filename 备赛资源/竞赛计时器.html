@@ -1,0 +1,367 @@
+ <!DOCTYPE html>
+ <html lang="zh-CN">
+ <head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>数学建模竞赛 74H 计时器</title>
+ <style>
+ * { margin: 0; padding: 0; box-sizing: border-box; }
+ body { font-family: -apple-system, "Microsoft YaHei", sans-serif; background: #0f172a; color: #e2e8f0; }
+ .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+ 
+ /* 计时器头部 */
+ .timer-header { text-align: center; padding: 30px 0; }
+ .timer-header h1 { font-size: 24px; color: #fbbf24; margin-bottom: 8px; }
+ .timer-header p { font-size: 14px; color: #94a3b8; }
+ .timer-display { 
+   background: linear-gradient(135deg, #1e293b, #334155); border-radius: 16px;
+   padding: 30px; text-align: center; margin: 20px 0;
+   box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+ }
+ .timer-display .time-remaining { font-size: 56px; font-weight: bold; color: #60a5fa; font-variant-numeric: tabular-nums; }
+ .timer-display .time-label { font-size: 14px; color: #94a3b8; margin-top: 8px; }
+ .timer-display .phase { margin-top: 12px; font-size: 18px; }
+ .phase-danger { color: #f87171; }
+ .phase-warning { color: #fbbf24; }
+ .phase-success { color: #34d399; }
+ 
+ /* 控制面板 */
+ .controls { display: flex; gap: 12px; justify-content: center; margin: 16px 0; flex-wrap: wrap; }
+ .controls button {
+   padding: 10px 24px; border: none; border-radius: 8px; font-size: 15px;
+   cursor: pointer; transition: all 0.2s; font-family: inherit;
+ }
+ .btn-start { background: #3b82f6; color: white; }
+ .btn-start:hover { background: #2563eb; }
+ .btn-pause { background: #f59e0b; color: white; }
+ .btn-pause:hover { background: #d97706; }
+ .btn-reset { background: #64748b; color: white; }
+ .btn-reset:hover { background: #475569; }
+ .btn-start:disabled, .btn-pause:disabled { opacity: 0.5; cursor: not-allowed; }
+ .btn-set { background: #8b5cf6; color: white; }
+ .btn-set:hover { background: #7c3aed; }
+ 
+ /* 时间线-日程表 */
+ .schedule { margin: 24px 0; }
+ .schedule h2 { font-size: 18px; margin-bottom: 16px; color: #f1f5f9; }
+ .timeline { position: relative; padding-left: 28px; }
+ .timeline::before {
+   content: ''; position: absolute; left: 8px; top: 0; bottom: 0;
+   width: 3px; background: #334155; border-radius: 2px;
+ }
+ .timeline-item {
+   position: relative; margin-bottom: 20px; padding: 12px 16px;
+   background: #1e293b; border-radius: 10px; border: 1px solid #334155;
+   transition: all 0.3s;
+ }
+ .timeline-item::before {
+   content: ''; position: absolute; left: -24px; top: 16px;
+   width: 14px; height: 14px; border-radius: 50%; background: #475569;
+   border: 3px solid #0f172a;
+ }
+ .timeline-item.passed { opacity: 0.6; }
+ .timeline-item.passed::before { background: #60a5fa; }
+ .timeline-item.current { border-color: #3b82f6; background: #1e3a5f; }
+ .timeline-item.current::before { background: #3b82f6; box-shadow: 0 0 8px #3b82f6; }
+ .timeline-item .time { font-size: 12px; color: #94a3b8; }
+ .timeline-item .title { font-size: 15px; font-weight: 600; margin: 4px 0; }
+ .timeline-item .desc { font-size: 13px; color: #94a3b8; }
+ .timeline-item .check { margin-top: 6px; font-size: 12px; }
+ .timeline-item .check label { color: #94a3b8; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+ .timeline-item .check input { accent-color: #3b82f6; }
+ .check-done label { text-decoration: line-through; color: #64748b; }
+ 
+ /* 设置对话框 */
+ .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+   background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; }
+ .modal-overlay.show { display: flex; }
+ .modal {
+   background: #1e293b; border-radius: 16px; padding: 30px; width: 90%; max-width: 400px;
+   border: 1px solid #334155;
+ }
+ .modal h3 { margin-bottom: 16px; color: #f1f5f9; }
+ .modal label { display: block; margin: 12px 0 4px; color: #94a3b8; }
+ .modal input, .modal select {
+   width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #475569;
+   background: #0f172a; color: #e2e8f0; font-size: 15px;
+ }
+ .modal .modal-buttons { display: flex; gap: 12px; margin-top: 20px; }
+ .modal .modal-buttons button { flex: 1; }
+ .btn-primary { background: #3b82f6; color: white; padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-size: 15px; }
+ .btn-secondary { background: #475569; color: white; padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-size: 15px; }
+ 
+ /* 工具部分 */
+ .tools { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 24px 0; }
+ .tool-card { background: #1e293b; border-radius: 12px; padding: 20px; border: 1px solid #334155; }
+ .tool-card h3 { font-size: 16px; color: #fbbf24; margin-bottom: 12px; }
+ .tool-card textarea {
+   width: 100%; height: 200px; padding: 12px; border-radius: 8px; border: 1px solid #475569;
+   background: #0f172a; color: #e2e8f0; font-size: 13px; resize: vertical; font-family: inherit;
+ }
+ .footer { text-align: center; padding: 20px; color: #475569; font-size: 13px; }
+ @media (max-width: 640px) { .tools { grid-template-columns: 1fr; } }
+ </style>
+ </head>
+ <body>
+ <div class="container">
+   <div class="timer-header">
+     <h1>🏆 数学建模竞赛 74小时计时器</h1>
+     <p>山西大学第二十届 · 2026年8月10日 18:00 — 8月13日 22:00</p>
+   </div>
+ 
+   <!-- 计时器 -->
+   <div class="timer-display">
+     <div class="time-remaining" id="timerDisplay">74:00:00</div>
+     <div class="time-label">剩余时间</div>
+     <div class="phase" id="phaseDisplay">⏳ 等待开始</div>
+   </div>
+ 
+   <div class="controls">
+     <button class="btn-set" onclick="showSetDialog()">⏰ 设置开始时间</button>
+     <button class="btn-start" id="btnStart" onclick="startTimer()" disabled>▶ 开始计时</button>
+     <button class="btn-pause" id="btnPause" onclick="pauseTimer()" disabled>⏸ 暂停</button>
+     <button class="btn-reset" onclick="resetTimer()">↺ 重置</button>
+   </div>
+ 
+   <!-- 日程时间线 -->
+   <div class="schedule">
+     <h2>📋 竞赛时间线</h2>
+     <div class="timeline" id="timeline"></div>
+   </div>
+ 
+   <!-- 工具 -->
+   <div class="tools">
+     <div class="tool-card">
+       <h3>📝 备忘录</h3>
+       <textarea id="notesBox" placeholder="记录关键思路、待办事项、模型选择..."></textarea>
+     </div>
+     <div class="tool-card">
+       <h3>📊 模型选择速查</h3>
+       <div style="font-size:13px;line-height:1.8;color:#cbd5e1">
+         <b>评价类：</b>AHP | TOPSIS | 熵权法 | 灰色关联<br>
+         <b>预测类：</b>回归 | 灰色GM(1,1) | ARIMA | 神经网络<br>
+         <b>优化类：</b>线性规划 | 整数规划 | 多目标 | 遗传算法<br>
+         <b>统计类：</b>K-Means | PCA | 假设检验 | 蒙特卡洛<br>
+         <b>其他：</b>SIR模型 | 图论 | 模拟退火 | 排队论
+       </div>
+     </div>
+   </div>
+ </div>
+ 
+ <!-- 设置对话框 -->
+ <div class="modal-overlay" id="modalOverlay">
+   <div class="modal">
+     <h3>设置竞赛开始时间</h3>
+     <label>日期</label>
+     <input type="date" id="startDate" value="2026-08-10">
+     <label>时间</label>
+     <input type="time" id="startTime" value="18:00">
+     <div class="modal-buttons">
+       <button class="btn-secondary" onclick="hideSetDialog()">取消</button>
+       <button class="btn-primary" onclick="applySetDialog()">确认</button>
+     </div>
+   </div>
+ </div>
+ 
+ <div class="footer">加油！你们一定能取得好成绩！</div>
+ 
+ <script>
+ // ===== 配置 =====
+ const TOTAL_SECONDS = 74 * 3600; // 74小时
+ 
+ let startTime = new Date('2026-08-10T18:00:00').getTime();
+ let elapsedSeconds = 0;
+ let timerInterval = null;
+ let isRunning = false;
+ let storedData = null;
+ 
+ // ===== 时间线数据 =====
+ const MILESTONES = [
+   { time: 0, title: "📄 领取题目 & 选题", desc: "通读A、B两题，组内讨论，确定选题方向", checks: ["已领取题目", "已确定选题"] },
+   { time: 4, title: "🔍 资料查阅 & 思路形成", desc: "查阅文献、明确建模思路、初步分工", checks: ["已查阅关键文献", "建模思路明确"] },
+   { time: 10, title: "📐 建立模型框架", desc: "推导核心公式，建立模型框架，准备编程", checks: ["模型框架完成", "公式推导完成"] },
+   { time: 20, title: "💻 编程实现", desc: "实现核心算法，跑出初步结果", checks: ["核心代码完成", "初步结果跑出"] },
+   { time: 30, title: "📊 结果分析 & 优化", desc: "分析结果、灵敏度分析、模型优化", checks: ["结果初步分析", "灵敏度分析开始"] },
+   { time: 36, title: "✍️ 开始写论文", desc: "写作手开始撰写论文初稿，编程手继续完善", checks: ["论文框架搭建", "初稿开始撰写"] },
+   { time: 48, title: "📝 论文初稿完成", desc: "所有图表就位，核心公式录入完毕", checks: ["初稿完成", "图表全部就位"] },
+   { time: 56, title: "🔧 论文修改 & 润色", desc: "修改逻辑、美化图表、打磨语言", checks: ["第一轮修改完成", "第二轮修改完成"] },
+   { time: 64, title: "✨ 摘要 & 排版", desc: "反复打磨摘要！检查格式、参考文献", checks: ["摘要定稿", "排版检查完成"] },
+   { time: 70, title: "✅ 最终检查", desc: "检查PDF命名、附件打包、提交邮箱", checks: ["PDF命名正确", "附件已打包", "错别字检查"] },
+   { time: 73, title: "📤 提交论文", desc: "发送至 sxushuxuejianmo@163.com，截图留证", checks: ["已提交", "QQ群确认收到"] },
+ ];
+ 
+ // ===== 计时器核心 =====
+ function formatTime(seconds) {
+   const h = Math.floor(seconds / 3600);
+   const m = Math.floor((seconds % 3600) / 60);
+   const s = Math.floor(seconds % 60);
+   return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+ }
+ 
+ function getPhase(progress) {
+   if (progress < 0) return { text: "⏳ 等待开始", cls: "" };
+   if (progress < 0.2) return { text: "📋 选题与建模阶段", cls: "phase-success" };
+   if (progress < 0.4) return { text: "💻 编程实现阶段", cls: "phase-success" };
+   if (progress < 0.6) return { text: "📊 结果分析阶段", cls: "phase-warning" };
+   if (progress < 0.85) return { text: "✍️ 论文撰写阶段", cls: "phase-warning" };
+   if (progress < 0.95) return { text: "🔧 修改润色阶段", cls: "phase-danger" };
+   return { text: "⏰ 最终检查与提交！", cls: "phase-danger" };
+ }
+ 
+ function updateTimer() {
+   const now = Date.now();
+   const elapsed = (now - startTime) / 1000;
+   const remaining = Math.max(0, TOTAL_SECONDS - elapsed);
+   const progress = elapsed / TOTAL_SECONDS;
+ 
+   document.getElementById('timerDisplay').textContent = formatTime(remaining);
+   const phase = getPhase(progress);
+   document.getElementById('phaseDisplay').textContent = phase.text;
+   document.getElementById('phaseDisplay').className = 'phase ' + phase.cls;
+ 
+   updateTimeline(progress);
+ 
+   if (remaining <= 0) {
+     document.getElementById('timerDisplay').textContent = '00:00:00';
+     document.getElementById('phaseDisplay').textContent = '🏁 比赛结束！';
+     isRunning = false;
+     clearInterval(timerInterval);
+     timerInterval = null;
+     document.getElementById('btnStart').disabled = true;
+     document.getElementById('btnPause').disabled = true;
+     localStorage.setItem('competitionTimer', JSON.stringify({ startTime, paused: false, elapsed: 0 }));
+   }
+ }
+ 
+ // ===== 时间线渲染 =====
+ function updateTimeline(progress) {
+   const container = document.getElementById('timeline');
+   container.innerHTML = '';
+   MILESTONES.forEach((m, idx) => {
+     const mTime = m.time / TOTAL_SECONDS;
+     const mEnd = idx < MILESTONES.length - 1 ? MILESTONES[idx+1].time / TOTAL_SECONDS : 1.1;
+     let cls = '';
+     if (progress < 0) cls = '';
+     else if (progress >= mEnd) cls = 'passed';
+     else if (progress >= mTime && progress < mEnd) cls = 'current';
+ 
+     const div = document.createElement('div');
+     div.className = 'timeline-item ' + cls;
+     const period = `${Math.floor(m.time/24)}d ${m.time%24}h`;
+     let checksHtml = '';
+     if (m.checks) {
+       checksHtml = '<div class="check">';
+       m.checks.forEach((c, ci) => {
+         const saved = localStorage.getItem('check_' + idx + '_' + ci);
+         const checked = saved === 'true' ? 'checked' : '';
+         checksHtml += `<div class="${checked ? 'check-done' : ''}"><label><input type="checkbox" ${checked} onchange="localStorage.setItem('check_${idx}_${ci}', this.checked)"> ${c}</label></div>`;
+       });
+       checksHtml += '</div>';
+     }
+     div.innerHTML = `
+       <div class="time">${period}</div>
+       <div class="title">${m.title}</div>
+       <div class="desc">${m.desc}</div>
+       ${checksHtml}
+     `;
+     container.appendChild(div);
+   });
+ }
+ 
+ // ===== 控制 =====
+ function startTimer() {
+   if (isRunning) return;
+   if (storedData) {
+     startTime = Date.now() - storedData.elapsed;
+     storedData = null;
+   }
+   isRunning = true;
+   document.getElementById('btnStart').disabled = true;
+   document.getElementById('btnPause').disabled = false;
+   timerInterval = setInterval(updateTimer, 1000);
+   localStorage.setItem('competitionTimer', JSON.stringify({ startTime, paused: false, elapsed: 0 }));
+ }
+ 
+ function pauseTimer() {
+   if (!isRunning) return;
+   isRunning = false;
+   clearInterval(timerInterval);
+   timerInterval = null;
+   document.getElementById('btnStart').disabled = false;
+   document.getElementById('btnPause').disabled = true;
+   const elapsed = Date.now() - startTime;
+   storedData = { elapsed };
+   if (typeof localStorage !== 'undefined') {
+     localStorage.setItem('competitionTimer', JSON.stringify({ startTime, paused: true, elapsed }));
+   }
+ }
+ 
+ function resetTimer() {
+   if (isRunning) {
+     clearInterval(timerInterval);
+     timerInterval = null;
+   }
+   isRunning = false;
+   storedData = null;
+   document.getElementById('btnStart').disabled = false;
+   document.getElementById('btnPause').disabled = true;
+   document.getElementById('timerDisplay').textContent = formatTime(TOTAL_SECONDS);
+   document.getElementById('phaseDisplay').textContent = '⏳ 等待开始';
+   document.getElementById('phaseDisplay').className = 'phase';
+   updateTimeline(-1);
+   if (typeof localStorage !== 'undefined') {
+     localStorage.removeItem('competitionTimer');
+   }
+   // Clear checkboxes
+   for (let key in localStorage) {
+     if (key.startsWith('check_')) localStorage.removeItem(key);
+   }
+ }
+ 
+ // ===== 设置对话框 =====
+ function showSetDialog() { document.getElementById('modalOverlay').classList.add('show'); }
+ function hideSetDialog() { document.getElementById('modalOverlay').classList.remove('show'); }
+ function applySetDialog() {
+   const dateVal = document.getElementById('startDate').value;
+   const timeVal = document.getElementById('startTime').value;
+   startTime = new Date(dateVal + 'T' + timeVal).getTime();
+   hideSetDialog();
+   if (!isRunning) {
+     document.getElementById('timerDisplay').textContent = formatTime(TOTAL_SECONDS);
+     updateTimeline(-1);
+     document.getElementById('btnStart').disabled = false;
+   }
+ }
+ 
+ // ===== 备忘录自动保存 =====
+ document.addEventListener('DOMContentLoaded', function() {
+   const notes = localStorage.getItem('competitionNotes');
+   if (notes) document.getElementById('notesBox').value = notes;
+   document.getElementById('notesBox').addEventListener('input', function() {
+     localStorage.setItem('competitionNotes', this.value);
+   });
+ 
+   // 恢复计时状态
+   const saved = localStorage.getItem('competitionTimer');
+   if (saved) {
+     try {
+       const data = JSON.parse(saved);
+       if (data.startTime) {
+         startTime = data.startTime;
+         if (data.paused && data.elapsed) {
+           storedData = { elapsed: data.elapsed };
+           const remaining = Math.max(0, TOTAL_SECONDS - data.elapsed);
+           document.getElementById('timerDisplay').textContent = formatTime(remaining);
+           updateTimeline(data.elapsed / TOTAL_SECONDS);
+         } else if (!data.paused) {
+           startTimer();
+         }
+       }
+     } catch(e) {}
+   } else {
+     updateTimeline(-1);
+   }
+ });
+ </script>
+ </body>
+ </html>

@@ -1,0 +1,42 @@
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{符号说明}
+
+本文使用的主要符号及其含义如表\ref{tab:符号说明}所示。
+
+\begin{longtable}{>{\centering\arraybackslash}p{0.17\textwidth}>{\centering\arraybackslash}p{0.77\textwidth}}
+  \caption{符号说明}
+  \label{tab:符号说明} \\
+  \toprule
+  符号 & 含义 \\
+  \midrule
+  \endfirsthead
+  \caption{符号说明（续）} \\
+  \toprule
+  符号 & 含义 \\
+  \midrule
+  \endhead
+  \bottomrule
+  \endfoot
+  $S$ & 销售额（Sales），单位：美元 \\
+  $S_t$ & 第$t$个月的总销售额 \\
+  $\bar{S}$ & 销售额样本均值 \\
+  $\sigma_S$ & 销售额样本标准差 \\
+  $n$ & 样本数量 \\
+  $\eta^2$ & ANOVA效应量（eta-squared），衡量因素对销售额方差的解释比例 \\
+  $F$ & ANOVA的F统计量 \\
+  $p$ & 假设检验的p值 \\
+  $r_s$ & Spearman秩相关系数 \\
+  $\hat{S}_t$ & 第$t$个月的销售额预测值 \\
+  $e_t$ & 第$t$个月的预测残差，$e_t = S_t - \hat{S}_t$ \\
+  $\alpha$ & Holt-Winters模型的水平平滑参数 \\
+  $\beta$ & Holt-Winters模型的趋势平滑参数 \\
+  $\gamma$ & Holt-Winters模型的季节平滑参数 \\
+  $L$ & 季节周期长度，$L=12$（月度数据） \\
+  $MSE$ & 均方误差（Mean Squared Error） \\
+  $MAE$ & 平均绝对误差（Mean Absolute Error） \\
+  $MAPE$ & 平均绝对百分比误差（Mean Absolute Percentage Error） \\
+  $R^2$ & 决定系数 \\
+  $\sigma_{res}$ & 历史残差标准差，用于构建预测区间 \\
+\end{longtable}

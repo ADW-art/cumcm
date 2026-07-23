@@ -1,0 +1,44 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# LaTeX build files
+*.aux
+*.log
+*.out
+*.fdb_latexmk
+*.fls
+*.synctex.gz
+*.xdv
+*.toc
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Large files (>100MB GitHub limit)
+备赛资源/历届赛题/2024赛题/附件2.csv
+备赛资源/历届赛题/CUMCM2024Problems.zip
+备赛资源/历届赛题/2016年CUMCM赛题.zip
+备赛资源/历届赛题/2015年CUMCM赛题.rar
+备赛资源/历届赛题/2018_CUMCM2018Problems.zip
+备赛资源/历届赛题/2020_CUMCM2020Problems.zip
+Mrite/
+
+# Temp files
+*.tmp

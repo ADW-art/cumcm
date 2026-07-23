@@ -1,0 +1,62 @@
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{模型检验与分析}
+
+为验证本文构建的Holt-Winters预测模型的有效性和稳健性，本节从误差分析和灵敏度分析两个角度进行检验。
+
+\subsection{误差分析与交叉验证}
+
+由于月度销售额时间序列的样本量有限（48个月），本节采用扩展窗口交叉验证（Expanding Window Cross-Validation）策略对模型进行滚动评估。具体方案为：以2022年1月至2023年12月（24个月）为初始训练窗口，逐月扩展——每次向后扩展1个月，重新训练模型并预测下一月，共进行24次滚动预测（覆盖2024年1月至2025年12月）。滚动验证的各月MAPE统计结果如表\ref{tab:交叉验证}所示。
+
+\begin{longtable}{>{\centering\arraybackslash}p{0.14\textwidth}>{\centering\arraybackslash}p{0.14\textwidth}>{\centering\arraybackslash}p{0.14\textwidth}>{\centering\arraybackslash}p{0.14\textwidth}>{\centering\arraybackslash}p{0.28\textwidth}}
+  \caption{扩展窗口交叉验证结果（按年汇总）}
+  \label{tab:交叉验证} \\
+  \toprule
+  年份 & 平均MAPE(\%) & 最小MAPE(\%) & 最大MAPE(\%) & MAPE标准差(\%) \\
+  \midrule
+  \endfirsthead
+  \caption{扩展窗口交叉验证结果（按年汇总）（续）} \\
+  \toprule
+  年份 & 平均MAPE(\%) & 最小MAPE(\%) & 最大MAPE(\%) & MAPE标准差(\%) \\
+  \midrule
+  \endhead
+  \bottomrule
+  \endfoot
+  2024年 & 22.83 & 10.52 & 33.03 & 8.36 \\
+  2025年 & 26.18 & 11.59 & 40.64 & 10.47 \\
+  整体 & 24.51 & 10.52 & 40.64 & 9.42 \\
+\end{longtable}
+
+从表\ref{tab:交叉验证}可以看出，2024年的滚动预测效果优于2025年（平均MAPE分别为22.83\%和26.18\%），主要原因是2025年销售额出现了超预期的强劲增长（特别是Q3-Q4），超出了历史季节模式的正常幅度。但整体24.51\%的滚动MAPE与固定测试集上的23.56\%基本一致，表明模型在不同时间窗口下具有较好的稳定性，未出现过拟合现象。
+
+\subsection{灵敏度分析}
+
+灵敏度分析通过改变Holt-Winters模型的关键参数和输入条件，观察预测结果的变化幅度，以评估模型的稳健性。本文从以下两个角度进行测试。
+
+\textbf{训练时长对预测精度的影响}：分别使用2年（2023-2024）、3年（2022-2024）和4年（2022-2025，全量）的历史数据训练模型，在2025年测试集上评估MAPE，结果如表\ref{tab:灵敏度}所示。
+
+\begin{longtable}{>{\centering\arraybackslash}p{0.22\textwidth}>{\centering\arraybackslash}p{0.22\textwidth}>{\centering\arraybackslash}p{0.22\textwidth}>{\centering\arraybackslash}p{0.22\textwidth}}
+  \caption{训练数据时长灵敏度分析}
+  \label{tab:灵敏度} \\
+  \toprule
+  训练数据范围 & 训练月数 & MAPE(\%) & $R^2$ \\
+  \midrule
+  \endfirsthead
+  \caption{训练数据时长灵敏度分析（续）} \\
+  \toprule
+  训练数据范围 & 样本数 & MAPE(\%) & $R^2$ \\
+  \midrule
+  \endhead
+  \bottomrule
+  \endfoot
+  2年（2023-2024） & 24 & 32.45 & 0.3917 \\
+  3年（2022-2024） & 36 & 23.56 & 0.7215 \\
+  4年（2022-2025，全量） & 48 & —（训练用） & —（训练用） \\
+\end{longtable}
+
+从表\ref{tab:灵敏度}可以看出，训练数据时长对预测精度具有显著影响：从2年增加到3年，MAPE从32.45\%降至23.56\%（改善约9个百分点），$R^2$从0.39提升至0.72。这表明至少需要3年的历史数据才能有效建模零售销售的年度季节性模式，为后续业务中的数据积累策略提供了量化依据。
+
+\textbf{季节周期长度对预测精度的影响}：改变Holt-Winters模型的季节周期参数$L$（从4到12），测试其对预测精度的影响。结果表明，$L=12$（年度周期）在所有参数设置中MAPE最低，验证了零售销售额遵循年度季节周期的业务判断。当$L$设为6或4时，MAPE分别上升至28.3\%和31.7\%，说明模型如果错误识别季节周期长度将导致预测效果显著下降。
+
+综合以上检验，Holt-Winters模型在3年及以上训练数据条件下表现稳定，对训练数据量和季节参数设置具有一定敏感性，但一旦正确识别季节周期并积累足够的训练数据，模型能够提供可靠的月度销售额预测。

@@ -1,0 +1,229 @@
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{模型建立}
+
+针对问题一，本节将从描述性统计和可视化分析两个层面建立系统的零售销售数据探索模型。具体过程如下。
+
+\textbf{步骤一：核心描述性统计量的计算}
+
+设数据集的销售额序列为$S = \{s_1, s_2, \ldots, s_n\}$，其中$n=9800$为样本总量。样本均值$\bar{S}$、样本标准差$\sigma_S$、偏度$g_1$、峰度$g_2$的定义如下：
+
+\begin{equation}
+\bar{S} = \frac{1}{n} \sum_{i=1}^{n} s_i
+\end{equation}
+
+\begin{equation}
+\sigma_S = \sqrt{\frac{1}{n-1} \sum_{i=1}^{n} (s_i - \bar{S})^2}
+\end{equation}
+
+\begin{equation}
+g_1 = \frac{n}{(n-1)(n-2)} \sum_{i=1}^{n} \left(\frac{s_i - \bar{S}}{\sigma_S}\right)^3
+\end{equation}
+
+\begin{equation}
+g_2 = \frac{n(n+1)}{(n-1)(n-2)(n-3)} \sum_{i=1}^{n} \left(\frac{s_i - \bar{S}}{\sigma_S}\right)^4 - \frac{3(n-1)^2}{(n-2)(n-3)}
+\end{equation}
+
+其中，偏度$g_1$衡量分布的对称性，$g_1>0$表示右偏；峰度$g_2$衡量分布的尖峭程度，$g_2>0$表示尖峰厚尾。
+
+变异系数$CV$和极差$R$分别反映相对离散程度和全距：
+
+\begin{equation}
+CV = \frac{\sigma_S}{\bar{S}}
+\end{equation}
+
+\begin{equation}
+R = s_{max} - s_{min}
+\end{equation}
+
+此外，四分位数$Q_1$（第25百分位数）、$Q_2$（中位数，第50百分位数）和$Q_3$（第75百分位数）用于描述销售额的分布形态。
+
+\textbf{步骤二：核心业务指标的定义}
+
+在订单维度层面，需要对Order ID进行去重统计以获取真实的订单数量。定义核心业务指标如下：
+
+\begin{equation}
+S_{total} = \sum_{i=1}^{n} s_i
+\end{equation}
+
+\begin{equation}
+N_{orders} = \left|\{OrderID_i : i=1,\ldots,n\}\right|
+\end{equation}
+
+\begin{equation}
+N_{customers} = \left|\{CustomerID_i : i=1,\ldots,n\}\right|
+\end{equation}
+
+\begin{equation}
+N_{products} = \left|\{ProductID_i : i=1,\ldots,n\}\right|
+\end{equation}
+
+\begin{equation}
+\bar{S}_{basket} = \frac{S_{total}}{N_{orders}}
+\end{equation}
+
+其中，$S_{total}$为总销售额，$N_{orders}$为去重后的总订单数，$N_{customers}$为去重后的有效客户数，$\bar{S}_{basket}$为平均客单价。
+
+\textbf{步骤三：时间维度聚合分析}
+
+定义时间聚合函数，将订单明细按时间粒度$g$（$g \in \{day, month, year\}$）聚合：
+
+\begin{equation}
+S_g(t) = \sum_{i: t_i \in g(t)} s_i
+\end{equation}
+
+其中$t_i$为第$i$条订单的下单日期，$g(t)$表示属于时间粒度$g$的时段。对于日维度，直接按Order Date聚合；对于月维度，按年月（YYYY-MM）聚合；对于年维度，按年份直接求和。月平均销售额的计算方式为：
+
+\begin{equation}
+\bar{S}_{month}(m) = \frac{1}{Y} \sum_{y=2022}^{2025} S_{month}(m, y)
+\end{equation}
+
+其中$m=1,\ldots,12$表示月份，$Y=4$为年数，$S_{month}(m, y)$为第$y$年第$m$月的销售额。
+
+\textbf{步骤四：多维度分布分析}
+
+定义分类维度集合$\mathcal{D} = \{Region, Category, Segment, ShipMode\}$。对于每个维度$d \in \mathcal{D}$，计算分组统计量：
+
+\begin{equation}
+\mu_d(c) = \frac{1}{n_d(c)} \sum_{i: d_i = c} s_i
+\end{equation}
+
+\begin{equation}
+\sigma_d(c) = \sqrt{\frac{1}{n_d(c)-1} \sum_{i: d_i = c} (s_i - \mu_d(c))^2}
+\end{equation}
+
+其中$c$为维度$d$中的类别取值，$n_d(c)$为属于类别$c$的样本数。各维度的销售额占比为：
+
+\begin{equation}
+P_d(c) = \frac{\sum_{i: d_i = c} s_i}{S_{total}} \times 100\%
+\end{equation}
+
+综上所述，本节完成了描述性统计分析模型的建立，得到了核心统计量、业务指标和多维聚合框架，接下来将基于此进行实际数据的求解和可视化呈现。
+
+% ============================================================
+\subsubsection{模型求解}
+
+基于上述模型，本节利用Python（pandas、numpy、matplotlib）对9800条订单数据进行求解。计算结果分为以下三个部分呈现。
+
+\textbf{（一）核心描述性统计量}
+
+销售额的核心统计量计算结果如表\ref{tab:描述性统计}所示。
+
+\begin{longtable}{>{\centering\arraybackslash}p{0.16\textwidth}>{\centering\arraybackslash}p{0.28\textwidth}>{\centering\arraybackslash}p{0.16\textwidth}>{\centering\arraybackslash}p{0.28\textwidth}}
+  \caption{销售额核心描述性统计量}
+  \label{tab:描述性统计} \\
+  \toprule
+  统计量 & 数值 & 统计量 & 数值 \\
+  \midrule
+  \endfirsthead
+  \caption{销售额核心描述性统计量（续）} \\
+  \toprule
+  统计量 & 数值 & 统计量 & 数值 \\
+  \midrule
+  \endhead
+  \bottomrule
+  \endfoot
+  样本量 & 9800 & 最小值(\$) & 0.44 \\
+  均值(\$) & 230.77 & 最大值(\$) & 22638.48 \\
+  中位数(\$) & 54.49 & 偏度 & 12.98 \\
+  标准差(\$) & 626.65 & 峰度 & 304.45 \\
+  变异系数CV & 2.72 & 极差(\$) & 22638.04 \\
+  Q1(\$) & 17.25 & Q3(\$) & 210.61 \\
+\end{longtable}
+
+从表\ref{tab:描述性统计}可以看出，单笔销售额的均值（230.77美元）远大于中位数（54.49美元），偏度高达12.98，表明销售额分布严重右偏——大部分交易金额较小，少数大额交易显著拉高了平均水平。变异系数2.72反映了销售额的剧烈波动性。
+
+核心业务指标计算结果如表\ref{tab:业务指标}所示。
+
+\begin{longtable}{>{\centering\arraybackslash}p{0.34\textwidth}>{\centering\arraybackslash}p{0.60\textwidth}}
+  \caption{核心业务指标汇总}
+  \label{tab:业务指标} \\
+  \toprule
+  指标 & 数值 \\
+  \midrule
+  \endfirsthead
+  \caption{核心业务指标汇总（续）} \\
+  \toprule
+  指标 & 数值 \\
+  \midrule
+  \endhead
+  \bottomrule
+  \endfoot
+  总销售额(\$) & 2261536.78 \\
+  总订单数（去重） & 4921 \\
+  有效客户数（去重） & 793 \\
+  产品总数（去重） & 1861 \\
+  平均客单价(\$) & 459.57 \\
+  客户平均消费(\$) & 2851.87 \\
+  订单平均商品数 & 1.99 \\
+\end{longtable}
+
+\textbf{（二）时间趋势分析}
+
+如图\ref{fig:月销售额趋势}所示，月度销售额呈现明显的上升趋势和季节性波动特征。从2022年初的约0.45万美元/月起步，到2025年底超过11万美元/月，整体增长趋势显著。每年9月和11-12月通常出现销售高峰，与返校季和年末假日购物季的零售行业规律高度吻合。
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{../求解/问题一/图片/月销售额趋势.png}
+  \caption{月度销售额趋势图（2022-2025年）}
+  \label{fig:月销售额趋势}
+\end{figure}
+
+如图\ref{fig:年销售额对比}所示，年度总销售额从2022年的47.99万美元增长至2025年的72.21万美元，四年间累计增长50.5\%，年均复合增长率约为14.6\%，表明该零售企业处于持续增长阶段。
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{../求解/问题一/图片/年销售额对比.png}
+  \caption{年度销售额对比}
+  \label{fig:年销售额对比}
+\end{figure}
+
+如图\ref{fig:月份平均销售额}所示，各月平均销售额呈现W型双峰分布特征，3月、9月和11月为销售旺季，2月和7月为相对淡季，反映了美国消费市场的典型季节性模式。
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{../求解/问题一/图片/月份平均销售额.png}
+  \caption{各月平均销售额分布}
+  \label{fig:月份平均销售额}
+\end{figure}
+
+\textbf{（三）多维度分布特征}
+
+如图\ref{fig:区域销售额对比}所示，在区域维度上，West区域的总销售额最高（71.02万美元，占比31.4\%），East区域紧随其后（66.95万美元，29.6\%），Central和South区域分别为49.26万美元（21.8\%）和38.92万美元（17.2\%）。西部和东部沿海经济发达地区是该企业的主要销售市场。
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{../求解/问题一/图片/区域销售额对比.png}
+  \caption{区域销售额对比}
+  \label{fig:区域销售额对比}
+\end{figure}
+
+如图\ref{fig:产品大类销售额对比}所示，在产品大类维度上，Technology品类销售额最高（82.75万美元，36.6\%），Furniture次之（72.87万美元，32.2\%），Office Supplies位列第三（70.54万美元，31.2\%）。三类产品的销售额总体较为均衡，但Technology品类的平均单品售价最高（456.40美元），对总销售额的贡献最大。
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{../求解/问题一/图片/产品大类销售额对比.png}
+  \caption{产品大类销售额对比}
+  \label{fig:产品大类销售额对比}
+\end{figure}
+
+如图\ref{fig:客户细分销售额对比}所示，在客户细分维度上，Consumer（个人消费者）贡献了最大的销售份额（114.81万美元，50.8\%），Corporate（企业客户）占比30.4\%，Home Office（家庭办公客户）占比18.8\%。Consumer不仅是销售额最大的客群，客户数量也最多（409个），是该零售企业的核心客户基础。
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{../求解/问题一/图片/客户细分销售额对比.png}
+  \caption{客户细分销售额对比}
+  \label{fig:客户细分销售额对比}
+\end{figure}
+
+如图\ref{fig:发货模式销售额对比}所示，在发货模式维度上，Standard Class是绝对主导的物流方式（134.08万美元，59.3\%），Second Class和First Class分别占19.9\%和15.3\%，Same Day同日达仅占5.5\%。大部分客户对时效性要求不高，倾向于选择经济型物流。
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{../求解/问题一/图片/发货模式销售额对比.png}
+  \caption{发货模式销售额对比}
+  \label{fig:发货模式销售额对比}
+\end{figure}
+
+综合以上分析结果可以看出，该零售企业的销售额整体呈增长趋势，具有明显的季节性特征，West和East区域、Technology品类和Consumer客群是当前的核心业务板块，而Standard Class物流模式占据主导地位。

@@ -1,0 +1,155 @@
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{模型建立}
+
+针对问题二，本节将从分类变量关联分析和数值变量相关分析两个层面建立系统的影响因素评估模型。具体过程如下。
+
+\textbf{步骤一：单因素ANOVA模型}
+
+对于分类维度$d$及其$K$个水平（类别）$\{c_1, c_2, \ldots, c_K\}$，定义各组样本的销售额序列。ANOVA检验的原假设$H_0$和备择假设$H_1$为：
+
+\begin{equation}
+H_0: \mu_{c_1} = \mu_{c_2} = \cdots = \mu_{c_K}
+\end{equation}
+
+\begin{equation}
+H_1: \exists i \neq j, \mu_{c_i} \neq \mu_{c_j}
+\end{equation}
+
+其中$\mu_{c_k}$为类别$c_k$的销售额总体均值。F统计量的计算过程如下。总平方和$SS_{total}$衡量所有观测值与总均值的总变异：
+
+\begin{equation}
+SS_{total} = \sum_{k=1}^{K} \sum_{i=1}^{n_k} (s_{ki} - \bar{S})^2
+\end{equation}
+
+组间平方和$SS_{between}$衡量各组均值与总均值的差异（由分类因素解释的变异）：
+
+\begin{equation}
+SS_{between} = \sum_{k=1}^{K} n_k (\bar{S}_k - \bar{S})^2
+\end{equation}
+
+组内平方和$SS_{within}$衡量各组内部的随机变异：
+
+\begin{equation}
+SS_{within} = \sum_{k=1}^{K} \sum_{i=1}^{n_k} (s_{ki} - \bar{S}_k)^2
+\end{equation}
+
+其中$n_k$为第$k$组的样本量，$\bar{S}_k$为第$k$组的销售额均值。自由度分别为$df_{between}=K-1$和$df_{within}=n-K$。组间均方和组内均方分别为：
+
+\begin{equation}
+MS_{between} = \frac{SS_{between}}{df_{between}}
+\end{equation}
+
+\begin{equation}
+MS_{within} = \frac{SS_{within}}{df_{within}}
+\end{equation}
+
+F统计量为组间均方与组内均方之比：
+
+\begin{equation}
+F = \frac{MS_{between}}{MS_{within}} \sim F(df_{between}, df_{within})
+\end{equation}
+
+\textbf{步骤二：效应量$\eta^2$的计算}
+
+F检验只能判断因素是否具有统计显著性（p值），但无法衡量因素的实际重要性。引入效应量$\eta^2$作为因素解释能力的度量：
+
+\begin{equation}
+\eta^2 = \frac{SS_{between}}{SS_{total}}
+\end{equation}
+
+$\eta^2$的取值范围为[0, 1]，表示该分类因素能够解释的销售额总方差比例。$\eta^2$大于0.14通常认为是大效应，0.06-0.14为中等效应，0.01-0.06为小效应，小于0.01可忽略。同时采用Levene检验验证方差齐性假设：
+
+\begin{equation}
+W = \frac{(n-K)}{(K-1)} \cdot \frac{\sum_{k=1}^{K} n_k (Z_k - Z)^2}{\sum_{k=1}^{K} \sum_{i=1}^{n_k} (Z_{ki} - Z_k)^2}
+\end{equation}
+
+其中$Z_{ki} = |s_{ki} - \bar{S}_k|$为各观测值到其组均值的绝对偏差。当Levene检验p值小于0.05时，方差齐性假设不满足，此时采用Welch ANOVA或Kruskal-Wallis非参数检验作为补充。
+
+\textbf{步骤三：Spearman秩相关分析}
+
+对于月度聚合层面的数值特征，设$X$和$Y$为两个数值变量，Spearman秩相关系数$r_s$的计算过程为：先将原始数据转换为秩次序列$R(X)$和$R(Y)$，然后计算秩次的Pearson相关系数：
+
+\begin{equation}
+r_s = \frac{\sum_{i=1}^{m} (R(X_i) - \bar{R}(X))(R(Y_i) - \bar{R}(Y))}{\sqrt{\sum_{i=1}^{m} (R(X_i) - \bar{R}(X))^2 \sum_{i=1}^{m} (R(Y_i) - \bar{R}(Y))^2}}
+\end{equation}
+
+其中$m$为月度样本数，$\bar{R}(X)$和$\bar{R}(Y)$分别为秩次的均值。$r_s \in [-1, 1]$，正值表示正相关，负值表示负相关，绝对值越接近1表示单调关系越强。$r_s$的显著性通过t检验进行：
+
+\begin{equation}
+t = r_s \sqrt{\frac{m-2}{1-r_s^2}} \sim t(m-2)
+\end{equation}
+
+\textbf{步骤四：综合影响因素排序}
+
+综合分类变量的$\eta^2$效应量和数值变量的$|r_s|$，构建影响因素重要性的综合排序。对于每个因素，定义其影响程度等级为：强影响（$\eta^2 > 0.05$或$|r_s| > 0.7$）、中等影响（$\eta^2 \in [0.01, 0.05]$或$|r_s| \in [0.4, 0.7]$）、弱影响（$\eta^2 < 0.01$或$|r_s| < 0.4$）。
+
+综上所述，本节完成了多因素关联分析模型的建立，得到了从统计检验到效应量评估再到排序分类的完整分析框架，接下来将基于此进行实际数据求解。
+
+% ============================================================
+\subsubsection{模型求解}
+
+基于上述模型，本节对9800条订单明细数据按分类维度和数值维度分别进行关联分析求解。
+
+\textbf{（一）分类变量ANOVA分析结果}
+
+对七个分类维度逐一进行ANOVA分析，结果如表\ref{tab:ANOVA结果}所示。
+
+\begin{longtable}{>{\centering\arraybackslash}p{0.14\textwidth}>{\centering\arraybackslash}p{0.16\textwidth}>{\centering\arraybackslash}p{0.14\textwidth}>{\centering\arraybackslash}p{0.16\textwidth}>{\centering\arraybackslash}p{0.24\textwidth}}
+  \caption{各维度ANOVA分析结果汇总}
+  \label{tab:ANOVA结果} \\
+  \toprule
+  维度 & F值 & $\eta^2$效应量 & 显著性 & 影响等级 \\
+  \midrule
+  \endfirsthead
+  \caption{各维度ANOVA分析结果汇总（续）} \\
+  \toprule
+  维度 & F值 & $\eta^2$效应量 & 显著性 & 影响等级 \\
+  \midrule
+  \endhead
+  \bottomrule
+  \endfoot
+  Sub-Category & 152.33 & 0.1994 & *** & 强 \\
+  Category & 262.16 & 0.0508 & *** & 强 \\
+  Quarter & 2.32 & 0.0007 & ns & 弱 \\
+  Region & 0.90 & 0.0003 & ns & 弱 \\
+  Year & 0.77 & 0.0002 & ns & 弱 \\
+  Segment & 0.59 & 0.0001 & ns & 弱 \\
+  Ship Mode & 0.07 & $<$0.0001 & ns & 弱 \\
+\end{longtable}
+
+注：***表示$p<0.001$，ns表示$p\ge0.05$。
+
+从表\ref{tab:ANOVA结果}可以得出以下核心发现：产品子类别（Sub-Category）是影响单笔销售额的最显著因素，$\eta^2$=0.199，即产品子类别可以解释约19.94\%的销售额方差，属于大效应；产品大类（Category）次之，$\eta^2$=0.051，解释约5.08\%的方差，属于中等效应；而区域、客户细分、发货模式、季度和年份的$\eta^2$均低于0.001，在单品明细层面对销售额的方差解释力极为有限。这一发现揭示了零售销售的核心规律：单笔交易金额主要取决于"买什么"，而非"谁在买"或"从哪买"，产品的品牌定位、功能价值和价格区间是决定销售额的第一驱动力。
+
+\textbf{（二）数值特征Spearman相关分析}
+
+如图\ref{fig:相关系数热力图}所示，月度销售额与月度订单数（$r_s$=0.918）、月度客户数（$r_s$=0.919）和月度产品数（$r_s$=0.938）均存在极强的正相关关系，三者共同构成了驱动月度销售额总量增长的协同因素。月平均客单价与月销售额呈中等正相关（$r_s$=0.406），月发货延迟与月销售额呈弱负相关（$r_s$=-0.246），表明发货效率对销售有一定负面影响。
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{../求解/问题二/图片/相关系数热力图.png}
+  \caption{月度数值特征Spearman相关系数热力图}
+  \label{fig:相关系数热力图}
+\end{figure}
+
+\textbf{（三）多维度分布特征可视化}
+
+如图\ref{fig:产品大类箱线图}和图\ref{fig:ANOVA效应量}所示，产品大类维度中Technology品类的中位销售额和四分位距均明显高于Furniture和Office Supplies，而ANOVA效应量排序直观展示了各因素影响的相对大小，产品子类别和产品大类显著高于其他维度。
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{../求解/问题二/图片/产品大类销售额箱线图.png}
+  \caption{产品大类销售额分布箱线图}
+  \label{fig:产品大类箱线图}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{../求解/问题二/图片/ANOVA效应量排序.png}
+  \caption{各因素$\eta^2$效应量排序}
+  \label{fig:ANOVA效应量}
+\end{figure}
+
+综合以上分析，识别出驱动销售额增长的核心因素为产品维度（子类别+大类），其解释了约25\%的单品销售额方差；在月度总量层面，客户获取量和订单转化量是销售额增长的核心驱动力。区域、客户类型和物流模式在单品层面影响有限，但在总量层面通过客户基数和订单量间接发挥作用。
